@@ -1,4 +1,3 @@
-from time import time
 from flask import Flask, request, jsonify, make_response
 from flask_sqlalchemy import SQLAlchemy
 from marshmallow_sqlalchemy import SQLAlchemySchema
@@ -9,45 +8,31 @@ db = SQLAlchemy(app)
 
 ###Models####
 class Logs(db.Model):
-    # __tablename__ = "outputs"
+    __tablename__ = "outputs"
     id = db.Column(db.Integer, primary_key=True)
     userid = db.Column(db.String(20))
     sessionid = db.Column(db.String(100))
+    actions = db.Column(db.String(20))
 
     def create(self):
       db.session.add(self)
       db.session.commit()
       return self
-    def __init__(self,userid,sessionid):
+    def __init__(self,userid,sessionid,actions):
         self.userid = userid
         self.sessionid = sessionid
+        self.actions = actions
     def __repr__(self):
         return '' % self.id
 
-class Actions(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    time=db.Column(db.String(20))
-    type=db.Column(db.String(20))
-    properties=db.Column(db.String(20))
-    user_id=db.Column(db.String(20),db.ForeignKey('logs.id'))  
-    user=db.relationship('Logs',backref='actions')
-
-    def create(self):
-      db.session.add(self)
-      db.session.commit()
-      return self
-    def __init__(self,time,type,properties,user):
-        self.time = time
-        self.type = type
-        self.properties = properties
-        self.user = user
-    def __repr__(self):
-        return '' % self.id
-
+        
 db.create_all()
-test=Logs(userid='1',sessionid='2')
-ac1=Actions(time='1',type='CLICK',properties='xxx',user=test)
-ac1.create()
+test1=Logs(userid='openhouse1',sessionid='01',actions='CLICK')
+test2=Logs(userid='openhouse2',sessionid='10',actions='VIEW')
+test3=Logs(userid='openhouse3',sessionid='11',actions='NAVIGATE')
+test1.create()
+test2.create()
+test3.create()
 class LogsSchema(SQLAlchemySchema):
     class Meta(SQLAlchemySchema.Meta):
         model = Logs
@@ -55,17 +40,9 @@ class LogsSchema(SQLAlchemySchema):
     id = fields.Number(dump_only=True)
     userid = fields.String(required=True)
     sessionid = fields.String(required=True)
+    actions = fields.String(required=True)
 
-class actionSchema(SQLAlchemySchema):
-    class Meta(SQLAlchemySchema.Meta):
-        model = Actions
-        sqla_session = db.session
-    id = fields.Number(dump_only=True)
-    time = fields.String(required=True)
-    type = fields.String(required=True)
-    properties = fields.String(required=True)
-
-@app.route('/', methods = ['GET'])
+@app.route('/Logs', methods = ['GET'])
 def index():
     get_Logs = Logs.query.all()
     Logs_schema = LogsSchema(many=True)
@@ -107,4 +84,3 @@ def create_Logs():
     return make_response(jsonify({"log": result}),200)
 if __name__ == "__main__":
     app.run(debug=True)
-
